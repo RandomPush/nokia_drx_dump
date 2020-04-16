@@ -1,0 +1,107 @@
+====================签名开始 2020-02-25 21:03:07====================
+本次签名文件个数:1
+
+real	0m7.023s
+user	0m0.008s
+sys	0m0.004s
+curl_result:201
+====================服务器签名开始 2020-02-25 21:03:15====================
+3ff72e9054fd7b31b8b06b175b5414bf.zip 文件下载成功
+Logging to /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware/SecImage_log.txt
+
+
+     SecImage v5.26 launched as: "/work/7.122_jenkins/workspace/SIGN_IN_WT/180581/sectools/sectools.py secimage -i out/target/product/T89572AA1/vendor/firmware/a506_zap.elf -o out/target/product/T89572AA1/vendor/firmware -c /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/sectools/config/8917_secimage/8917_secimage.xml -sa"
+
+Config path is set to: /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/sectools/config/8917_secimage/8917_secimage.xml
+------------------------------------------------------
+Processing 1/1: /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware/a506_zap.elf
+
+/work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware/a506_zap.elf is already QTI-signed.
+/work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware/a506_zap.elf is already OEM-signed. Rerunning OEM sign.
+
+Attestation Certificate Properties:
+| SW_ID     | 0x0000000000000014  |
+| HW_ID     | 0x001060E100359571  |
+| DEBUG     | 0x0000000000000002  |
+| OEM_ID    | 0x0035              |
+| SW_SIZE   | 136                 |
+| MODEL_ID  | 0x9571              |
+| SHA_ALGO  | SHA256              |
+| EXPONENT  | 3                   |
+
+[32mSigned image is stored at /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware/8917/gfx_microcode/a506_zap.elf[39m
+OEM signed image with PKCS
+Image /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware/8917/gfx_microcode/a506_zap.elf signature is valid
+Image /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware/8917/gfx_microcode/a506_zap.elf is not encrypted
+
+Base Properties: 
+| Integrity Check             | True  |
+| Signed                      | True  |
+| Encrypted                   | False |
+| Size of signature           | 256   |
+| Size of one cert            | 2048  |
+| Num of certs in cert chain  | 3     |
+| Number of root certs        | 1     |
+| Maximum number of root certs| None  |
+| Cert chain size             | 6144  |
+
+ELF Properties: 
+Header: 
+| Magic                      | ELF                           |
+| Class                      | ELF32                          |
+| Data                       | 2's complement, little endian  |
+| Version                    | 1 (Current)                    |
+| OS/ABI                     | No extensions or unspecified   |
+| ABI Version                | 0                              |
+| Type                       | EXEC (Executable file)         |
+| Machine                    | 164                            |
+| Version                    | 0x1                            |
+| Entry address              | 0x00005000                     |
+| Program headers offset     | 0x00000034                     |
+| Section headers offset     | 0x00000000                     |
+| Flags                      | 0x00000003                     |
+| ELF header size            | 52                             |
+| Program headers size       | 32                             |
+| Number of program headers  | 1                              |
+| Section headers size       | 0                              |
+| Number of section headers  | 0                              |
+| String table section index | 0                              |
+
+Program Headers: 
+| Num | Type | Offset | VirtAddr | PhysAddr | FileSize | MemSize | Flags |   Align   |
+|-----|------|--------|----------|----------|----------|---------|-------|-----------|
+|  1  | LOAD | 0x3000 |  0x5000  |  0x5000  |  0x1454  |  0x1454 |  RWE  | 0x100000  |
+
+Hash Segment Properties: 
+| Header Size     | 40B     |
+| Hash Algorithm  | sha256  |
+
+Header: 
+| cert_chain_ptr  | 0x00007188  |
+| cert_chain_size | 0x00001800  |
+| code_size       | 0x00000060  |
+| image_dest_ptr  | 0x00007028  |
+| image_id        | 0x00000000  |
+| image_size      | 0x00001960  |
+| image_src       | 0x00000000  |
+| sig_ptr         | 0x00007088  |
+| sig_size        | 0x00000100  |
+| version         | 0x00000003  |
+
+
+------------------------------------------------------
+
+SUMMARY:
+Following actions were performed: "sign, validate"
+Output is saved at: /work/7.122_jenkins/workspace/SIGN_IN_WT/180581/unsigned_files/out/target/product/T89572AA1/vendor/firmware
+
+| Idx |     SignId    | Parse | Integrity | Sign | Encrypt |              Validate              |
+|     |               |       |           |      |         | Parse | Integrity | Sign | Encrypt |
+|-----|---------------|-------|-----------|------|---------|-------|-----------|------|---------|
+|  1. | gfx_microcode |   T   |     NA    |  T   |    NA   |   T   |     T     |  T   |    NA   |
+
+====================签名完毕 2020-02-25 21:03:45====================
+BIN out/target/product/T89572AA1/vendor/firmware/signed/a506_zap.mdt
+BIN out/target/product/T89572AA1/vendor/firmware/signed/a506_zap.b00
+BIN out/target/product/T89572AA1/vendor/firmware/signed/a506_zap.b01
+BIN out/target/product/T89572AA1/vendor/firmware/signed/a506_zap.b02

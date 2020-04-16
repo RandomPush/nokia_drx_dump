@@ -1,0 +1,412 @@
+# Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#     * Neither the name of The Linux Foundation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+
+import init.carrier.rc
+
+on early-init
+    exec u:r:vendor_modprobe:s0 -- /vendor/bin/modprobe -a -d /vendor/lib/modules audio_apr audio_adsp_loader audio_q6_notifier audio_q6 audio_usf audio_native audio_pinctrl_wcd audio_swr audio_platform audio_swr_ctrl audio_hdmi audio_wcd9xxx audio_wcd_core audio_wsa881x_analog audio_wsa881x audio_mbhc audio_stub audio_digital_cdc audio_analog_cdc audio_wcd_cpe audio_cpe_lsm audio_wcd9335 audio_machine_sdm450 audio_machine_ext_sdm450
+    mkdir /firmware 0771 system system
+    mkdir /system 0777 root root
+    mkdir /bt_firmware 0771 system system
+    symlink /data/tombstones /tombstones
+    mkdir /dsp 0771 media media
+
+on fs
+    wait /dev/block/platform/soc/${ro.boot.bootdevice}
+    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+    #lizerong,add,dynamic partition
+    mount_all /vendor/etc/fstab.qcom --early
+    chown root system /mnt/vendor/persist
+    chmod 0771 /mnt/vendor/persist
+    mkdir /mnt/vendor/persist/data 0700 system system
+    mkdir /mnt/vendor/persist/bms 0700 root system
+    restorecon_recursive /mnt/vendor/persist
+
+#Extr939,liulai@wingtech.com.wt,ADD,20191012,add ftm.img for factory
+    restorecon_recursive /mnt/ftm
+
+    write /proc/sys/vm/swappiness 100
+
+    #write /sys/kernel/boot_adsp/boot 1
+    wait /dev/block/bootdevice/by-name/oem
+    mount ext4 /dev/block/bootdevice/by-name/oem /oem ro nosuid nodev barrier=1
+
+on post-fs
+    # set RLIMIT_MEMLOCK to 64MB
+    setrlimit 8 67108864 67108864
+
+    start vendor.qseecomd
+    exec - system system -- /vendor/bin/init.qti.qseecomd.sh
+    write /dev/ipa 1
+
+    chown root system /sys/devices/proinfo/color_id
+    chmod 0664 /sys/devices/proinfo/color_id
+    chown root system /sys/devices/proinfo/sku_id
+    chmod 0664 /sys/devices/proinfo/sku_id
+    chown root system /sys/devices/proinfo/ta_code
+    chmod 0664 /sys/devices/proinfo/ta_code
+
+    chown root system /sys/devices/proinfo/IMEI0
+    chown root system /sys/devices/proinfo/IMEI1
+    chown root system /sys/devices/proinfo/MEID
+    chown root system /sys/devices/proinfo/psn
+    chown root system /sys/devices/proinfo/sn
+    chown root system /sys/devices/proinfo/bt
+    chown root system /sys/devices/proinfo/wlan
+
+#add for focaltech open short test, 20191007, fangzhihua.wt
+    chmod 774 /sys/bus/i2c/devices/3-0038/fts_test
+    chmod 774 /sys/bus/i2c/devices/3-0055/strawtest
+    chown system system /sys/bus/i2c/devices/3-0038/fts_test
+    chown system system /sys/bus/i2c/devices/3-0055/strawtest
+
+#wt-luowei add for hardwareinfo test in mmigroup, 20191005
+    chmod 774 /dev/hardwareinfo
+    chown root system /dev/hardwareinfo
+
+#bug 486403,20191016,modify for nps function
+#DeviceActivation
+   chown system system /sys/devices/proinfo/factoryreset_date
+   chmod 0664 /sys/devices/proinfo/factoryreset_date
+
+on post-fs-data
+    mkdir /data/tombstones 0771 system system
+    mkdir /tombstones/modem 0771 system system
+    mkdir /tombstones/lpass 0771 system system
+    mkdir /tombstones/wcnss 0771 system system
+    mkdir /tombstones/dsps 0771 system system
+    mkdir /persist/data/sfs 0700 system system
+    mkdir /persist/data/tz 0700 system system
+    mkdir /data/vendor/hbtp 0750 system system
+    mkdir /data/misc/dts 0770 media audio
+#Extr939,liulai@wingtech.com.wt,ADD,20191012,add ftm.img for factory
+    wait /dev/block/bootdevice/by-name/ftm
+
+#lizerong,add,dynamic partition
+on late-fs
+	mount_all /vendor/etc/fstab.qcom --late
+
+#Create folder for mm-qcamera-daemon
+    mkdir /data/vendor/camera 0770 camera camera
+    #+Bug 486387,weiguobing.wt,Add,20191011,add for SW lable
+    chown system system /mnt/elabel/regulatory_info.png
+    chmod 0770 /mnt/elabel/regulatory_info.png
+    #-Bug 486387,weiguobing.wt,Add,20191011,add for SW lable
+
+#start camera server as daemon
+service qcamerasvr /system/vendor/bin/mm-qcamera-daemon
+    class late_start
+    user camera
+    group camera system inet input graphics
+
+on init
+   write /sys/module/qpnp_rtc/parameters/poweron_alarm 1
+#Extr939,liulai@wingtech.com.wt,ADD,20191012,add ftm.img for factory
+   mkdir /mnt/ftm 0771 root system
+
+service qfp-daemon /system/vendor/bin/qfp-daemon
+   class late_start
+   user system
+   group system drmrpc
+
+# Allow usb charging to be disabled peristently
+on property:persist.usb.chgdisabled=1
+    write /sys/class/power_supply/battery/charging_enabled 0
+
+#++added by huwenxia.wt for DRX-1864 20191127
+on property:persist.vendor.radio.multisim_config=*
+setprop persist.radio.multisim.config ${persist.vendor.radio.multisim_config}
+#--added by huwenxia.wt for DRX-1864 20191127
+
+on property:persist.usb.chgdisabled=0
+    write /sys/class/power_supply/battery/charging_enabled 1
+
+service qrngd /system/bin/qrngd -f
+   class main
+   user root
+   group root
+
+service qrngp /system/bin/qrngp -f
+   class main
+   user root
+   group root
+   oneshot
+   disabled
+
+on property:sys.boot_completed=1
+   start qrngp
+
+service vendor.qseecomd /vendor/bin/qseecomd
+   class core
+   user root
+   group root
+
+#service aostlmd /system/bin/aostlmd
+#   class late_start
+#   user system
+#   group system net_raw
+
+service thermal-engine /system/vendor/bin/thermal-engine
+   class main
+   user root
+   socket thermal-send-client stream 0666 system system
+   socket thermal-recv-client stream 0660 system system
+   socket thermal-recv-passive-client stream 0666 system system
+   socket thermal-send-rule stream 0660 system system
+   group root
+
+service audiod /system/vendor/bin/audiod
+   class late_start
+   user system
+   group system
+
+on boot
+    #+ExtB DRX-3102, tanchengwei.wt, add, 20191219, add facebook config file.
+    chown system system /system/data
+    chown system system /system/data/cfg1
+    chown system system /system/data/cfg2
+    chown system system /system/data/cfg3
+    chown system system /system/facebook
+    #-ExtB DRX-3102, tanchengwei.wt, add, 20191219, add facebook config file.
+    #+Bug 486387,weiguobing.wt,Add,20191011,add for SW lable
+    chown root system /mnt/vendor/elabel
+    chmod 0771 /mnt/vendor/elabel
+    restorecon_recursive /mnt/vendor/elabel
+    #-Bug 486387,weiguobing.wt,Add,20191011,add for SW lable
+    start rmt_storage
+    insmod /system/lib/modules/adsprpc.ko
+# access permission for secure touch
+    chmod 0660 /sys/devices/soc.0/78b7000.i2c/i2c-3/3-0020/input/input0/secure_touch_enable
+    chmod 0440 /sys/devices/soc.0/78b7000.i2c/i2c-3/3-0020/input/input0/secure_touch
+    chmod 0660 /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/secure_touch_enable
+    chmod 0440 /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/secure_touch
+    #bug413048 add sar_sensor node permission and radio group
+    chmod 0664 /sys/class/capsense/enable
+    chown system drmrpc /sys/devices/soc.0/78b7000.i2c/i2c-3/3-0020/input/input0/secure_touch_enable
+    chown system drmrpc /sys/devices/soc.0/78b7000.i2c/i2c-3/3-0020/input/input0/secure_touch
+    chown system drmrpc /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/secure_touch_enable
+    chown system drmrpc /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/secure_touch
+    chown system system /sys/kernel/hbtp/display_pwr
+    #bug413048 add sar_sensor node permission and radio group
+    chown radio radio /sys/class/capsense/enable
+
+ # Add a cpuset for the camera daemon
+ # We want all cores for camera
+    mkdir /dev/cpuset/camera-daemon
+    write /dev/cpuset/camera-daemon/cpus 0-3
+    write /dev/cpuset/camera-daemon/mems 0
+    chown cameraserver cameraserver /dev/cpuset/camera-daemon
+    chown cameraserver cameraserver /dev/cpuset/camera-daemon/tasks
+    chmod 0660 /dev/cpuset/camera-daemon/tasks
+
+# access permission for wlan
+    chown system system /mnt/vendor/persist/WCNSS_qcom_wlan_nv.bin
+
+#USB controller configuration
+    setprop vendor.usb.rndis.func.name "rndis"
+    setprop vendor.usb.rmnet.func.name "rmnet_bam"
+    setprop vendor.usb.rmnet.inst.name "rmnet_bam_dmux"
+    setprop vendor.usb.dpl.inst.name "dpl_bam_dmux"
+    setprop vendor.usb.qdss.inst.name "qdss"
+
+service ppd /system/vendor/bin/mm-pp-dpps
+    class late_start
+    disabled
+    user system
+    socket pps stream 0660 system system
+    group system graphics
+
+on property:init.svc.surfaceflinger=stopped
+    stop ppd
+
+on property:init.svc.surfaceflinger=running
+    start ppd
+
+on property:init.svc.surfaceflinger=restarting
+    stop ppd
+
+on property:init.svc.zygote=stopped
+    stop ppd
+
+on property:init.svc.zygote=running
+    start ppd
+
+on property:init.svc.zygote=restarting
+    stop ppd
+
+service wcnss-service /system/vendor/bin/wcnss_service
+    class main
+    user system
+    group system wifi radio
+    oneshot
+
+on charger
+    wait /dev/block/bootdevice/by-name/system
+    mount ext4 /dev/block/bootdevice/by-name/system /system ro barrier=1
+    load_system_props
+    setprop sys.usb.configfs 1
+    start qcom-post-boot
+    setprop persist.sys.usb.config mass_storage
+    start hvdcp_opti
+    start vendor.vm_bms
+
+service imsstarter /vendor/bin/init.qti.ims.sh
+    class main
+    oneshot
+
+on property:vold.decrypt=trigger_restart_framework
+    start imsstarter
+
+## imsdatadaemon starts with root and UID will be downgraded to SYSTEM.
+service vendor.imsqmidaemon /system/vendor/bin/imsqmidaemon
+    class main
+    user system
+    socket ims_qmid stream 0660 system radio
+    group radio log diag
+    disabled
+
+on property:vendor.service.qti.ims.enabled=1
+    start vendor.imsqmidaemon
+
+# imsdatadaemon starts with root and UID will be downgraded to SYSTEM.
+service vendor.imsdatadaemon /system/vendor/bin/imsdatadaemon
+    class main
+    user system
+    socket ims_datad stream 0660 system radio
+    group system wifi radio inet log diag
+    disabled
+
+on property:vendor.ims.QMI_DAEMON_STATUS=1
+    start vendor.imsdatadaemon
+
+service vendor.ims_rtp_daemon /system/vendor/bin/ims_rtp_daemon
+   class main
+   user system
+   group radio diag inet log
+
+service vendor.imsrcsservice /system/vendor/bin/imsrcsd
+   class main
+   user system
+   group radio diag inet log wakelock
+
+on property:vendor.ims.DATA_DAEMON_STATUS=1
+    restart vendor.ims_rtp_daemon
+
+service hbtp /system/vendor/bin/hbtp_daemon
+    class main
+    user system
+    group system
+    disabled
+
+service dts_configurator /system/vendor/bin/dts_configurator
+    class late_start
+    user system
+    group media audio
+    oneshot
+
+service dtseagleservice /system/vendor/bin/dts_eagle_service
+    class late_start
+    user system
+    group audio media
+    disabled
+
+service adsprpcd /system/vendor/bin/adsprpcd
+    class main
+    user media
+    group media
+
+on property:init.svc.dts_configurator=stopped
+    start dtseagleservice
+
+service vendor.per_mgr /system/vendor/bin/pm-service
+    class core
+    user system
+    group system net_raw
+
+service vendor.per_proxy /system/vendor/bin/pm-proxy
+    class core
+    user system
+    group system
+    disabled
+
+on property:init.svc.vendor.per_mgr=running
+    start vendor.per_proxy
+
+on property:sys.shutdown.requested=*
+    stop vendor.per_proxy
+
+service hvdcp_opti /system/bin/hvdcp_opti
+    class main
+    user root
+    group root
+
+service vendor.vm_bms /vendor/bin/vm_bms
+    class main
+    user root
+    group system wakelock
+
+service mdtpd /system/vendor/bin/mdtpd
+    class late_start
+    user root
+    group system radio drmrpc
+
+#+chk5459,liulai@wingtech.com.wt,ADD,20191029,add bind/query instructions of cpu and emmc
+on boot
+   start wt_tee_check
+
+service wt_tee_check /vendor/bin/wt_tee_check --tee_set
+   class core
+   user root
+   group root
+   oneshot
+   disabled
+   seclabel u:r:tee:s0
+#-chk5459,liulai@wingtech.com.wt,ADD,20191029,add bind/query instructions of cpu and emmc
+
+on boot
+    write /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/fw_name PR1702898-s3528t_00260005_00380008.img
+    write /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/update_fw 1
+
+#stop qrtr-ns in Go targets
+service vendor.qrtr-ns /vendor/bin/qrtr-ns -f
+    override
+    class core
+    user vendor_qrtr
+    group vendor_qrtr
+    capabilities NET_BIND_SERVICE
+    disabled
+
+#+Extr939,liulai@wingtech.com.wt,ADD,20191012,add ftm.img for factory
+on property:ro.factory_mode=1
+    mount ext4 /dev/block/bootdevice/by-name/ftm /mnt/ftm noatime nosuid nodev barrier=1
+#-Extr939,liulai@wingtech.com.wt,ADD,20191012,add ftm.img for factory
+
+#Chk35481 liangsuocheng.wt add 2019.10.30 fix lun.0/file permission
+on boot
+    chmod 0664 /config/usb_gadget/g1/functions/mass_storage.0/lun.0/file
